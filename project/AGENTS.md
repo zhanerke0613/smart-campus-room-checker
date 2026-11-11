@@ -65,7 +65,7 @@ A single-page React + TypeScript app that checks whether one campus room at a ti
 ## Test commands (from package.json)
 
 ```bash
-npm test        # runs availability.test.ts then filterRooms.test.ts via tsx (52 checks: 35 + 17)
+npm test        # runs availability.test.ts, filterRooms.test.ts, then selection.test.ts via tsx (56 checks: 35 + 17 + 4)
 npm run typecheck   # tsc --noEmit -p tsconfig.app.json
 npm run build       # vite build
 npm run lint        # eslint . (documented; run it when touching lint-relevant code)
@@ -79,8 +79,8 @@ Run `npm test` and `npm run typecheck` before reporting work as complete. Update
 - Equipment: a room is listed only if it has every selected equipment item (ALL-match).
 - Blocked rooms stay listed and are always reported as unavailable (AC3).
 - Empty results show "No matching rooms found."
-- Target behavior (open issue R1, not yet fixed): the verdict and schedule must follow a room the user can actually see. If a filter hides the selected room, the app must not present that room's availability as the current choice. Do not mark this as done until a regression check covers it.
-- Open issue R2, not yet fixed: clearing the Current Time field silently falls back to 13:00. Do not describe this as resolved.
+- R1 (resolved): the verdict and schedule must follow a room the user can actually see. If a filter hides the selected room, the app must not present that room's availability as the current choice. Fix: `App.tsx` resolves the selected room via `resolveVisibleRoom(filteredRooms, roomId)`; when the room is filtered out it returns `null`, `checkAvailability` is skipped, and the verdict and schedule are suppressed with an amber notice. Regression test: `selection.test.ts` — `resolveVisibleRoom(visible, "eng-101") === null`.
+- R2 (resolved): clearing the Current Time field must not silently fall back to 13:00. Fix: `App.tsx` parses the field with `parseRequiredCurrentTime(nowOverride, hhmmToMinutes)`, which returns `null` for empty input; no availability check runs and an error state is shown. Regression test: `selection.test.ts` — `parseRequiredCurrentTime("", hhmmToMinutes) === null`.
 
 ## Test conventions
 
