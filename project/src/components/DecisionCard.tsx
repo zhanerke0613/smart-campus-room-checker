@@ -1,13 +1,16 @@
-import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, Sparkles } from "lucide-react";
 import type { AvailabilityResult } from "../types";
+import type { Explanation } from "../lib/explainAvailability";
 import { formatRange } from "../lib/time";
 
 interface Props {
   result: AvailabilityResult;
   candidateRange: { start: number; end: number } | null;
+  explanation: Explanation | null;
+  onExplain: () => void;
 }
 
-export function DecisionCard({ result, candidateRange }: Props) {
+export function DecisionCard({ result, candidateRange, explanation, onExplain }: Props) {
   if (!candidateRange) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-6 text-center text-sm text-slate-400">
@@ -79,6 +82,34 @@ export function DecisionCard({ result, candidateRange }: Props) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {explanation === null && (
+        <button
+          type="button"
+          onClick={onExplain}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-slate-400" />
+          Explain Availability
+        </button>
+      )}
+
+      {explanation !== null && (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-white/80 p-3">
+          <p className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <Sparkles className="h-3 w-3" />
+            AI Explanation (Mock)
+            {explanation.source === "fallback" && (
+              <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium normal-case text-amber-700">
+                fallback
+              </span>
+            )}
+          </p>
+          <p className="text-sm leading-relaxed text-slate-700">
+            {explanation.text}
+          </p>
         </div>
       )}
     </div>

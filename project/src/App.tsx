@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Clock,
   CalendarClock,
@@ -7,6 +7,8 @@ import {
 import { rooms } from "./data";
 import type { Room } from "./types";
 import { checkAvailability } from "./lib/availability";
+import { explainAvailability } from "./lib/explainAvailability";
+import type { Explanation } from "./lib/explainAvailability";
 import { filterRooms } from "./lib/filterRooms";
 import { resolveVisibleRoom, parseRequiredCurrentTime } from "./lib/selection";
 import {
@@ -35,6 +37,7 @@ function App() {
   const [endStr, setEndStr] = useState<string>("15:00");
   const [minCapacity, setMinCapacity] = useState<number>(0);
   const [equipmentFilter, setEquipmentFilter] = useState<string[]>([]);
+  const [explanation, setExplanation] = useState<Explanation | null>(null);
 
   const startMin = hhmmToMinutes(startStr);
   const endMin = hhmmToMinutesEnd(endStr);
@@ -72,6 +75,25 @@ function App() {
     if (!candidate || nowMin === null || !selectedRoom) return null;
     return checkAvailability(selectedRoom, candidate.start, candidate.end, nowMin);
   }, [selectedRoom, candidate, nowMin]);
+
+  // A stale explanation must never sit under a newer verdict.
+  useEffect(() => {
+    setExplanation(null);
+  }, [result]);
+
+  function handleExplain() {
+    if (!result || !candidate || !selectedRoom) return;
+    const reasonCode = result.available ? null : result.reasons[0].code;
+    setExplanation(
+      explainAvailability({
+        roomLabel: selectedRoom.name,
+        startTime: candidate.start,
+        endTime: candidate.end,
+        isAvailable: result.available,
+        reasonCode,
+      })
+    );
+  }
 
   const duration = candidate ? candidate.end - candidate.start : 0;
   const overLimit = duration > MAX_BOOKING;
@@ -220,7 +242,12 @@ function App() {
 
             {/* Decision */}
             {result && candidate && (
-              <DecisionCard result={result} candidateRange={candidate} />
+              <DecisionCard
+                result={result}
+                candidateRange={candidate}
+                explanation={explanation}
+                onExplain={handleExplain}
+              />
             )}
           </section>
 

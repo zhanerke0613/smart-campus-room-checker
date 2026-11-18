@@ -22,12 +22,14 @@ A single-page React + TypeScript app that checks whether one campus room at a ti
 | `src/data.ts` | Fixture: 9 rooms (id, name, building, capacity, equipment, blocked, bookings); exports `ALL_EQUIPMENT` |
 | `src/types.ts` | `Room` (includes `equipment`), `Booking`, `CheckReason`, `AvailabilityResult` types |
 | `src/lib/availability.ts` | `checkAvailability(room, start, end, currentTime)`: pure; enforces AC1–AC6 |
+| `src/lib/explainAvailability.ts` | Mock LLM adapter: `explainAvailability(input, adapter?)` returns a ≤2-sentence explanation or deterministic fallback; pure, offline, no keys |
 | `src/lib/time.ts` | Pure time parsing/formatting helpers (`hhmmToMinutes`, `hhmmToMinutesEnd`, `formatRange`, etc.) |
 | `src/lib/filterRooms.ts` | `filterRooms(rooms, { minCapacity, equipment })`: pure; equipment uses ALL-match |
 | `src/components/RoomPicker.tsx` | Room list, capacity slider, equipment chips, "No matching rooms found" state |
 | `src/components/RoomSchedule.tsx` | Selected room's bookings, capacity, and equipment tags |
 | `src/components/DecisionCard.tsx` | Renders Available/Unavailable verdict, reasons, and conflicting bookings |
 | `src/tests/availability.test.ts` | 35 checks: parser validation, AC1–AC6, regressions |
+| `src/tests/explainAvailability.test.ts` | 37 checks: valid/invalid inputs, verdict consistency, fallback, prompt-injection resistance (PW #11 Task #03) |
 | `src/tests/filterRooms.test.ts` | 17 checks: capacity, equipment, combined filters, edge cases |
 | `tailwind.config.js` | Tailwind config with custom `xs` (400px) breakpoint |
 | `bug-detector/SKILL.md` | Bug-diagnosis procedure; diagnose and propose only, do not edit |
@@ -65,7 +67,7 @@ A single-page React + TypeScript app that checks whether one campus room at a ti
 ## Test commands (from package.json)
 
 ```bash
-npm test        # runs availability.test.ts, filterRooms.test.ts, then selection.test.ts via tsx (56 checks: 35 + 17 + 4)
+npm test        # runs availability.test.ts, filterRooms.test.ts, then selection.test.ts, then explainAvailability.test.ts via tsx (93 checks: 35 + 17 + 4 + 37)
 npm run typecheck   # tsc --noEmit -p tsconfig.app.json
 npm run build       # vite build
 npm run lint        # eslint . (documented; run it when touching lint-relevant code)
