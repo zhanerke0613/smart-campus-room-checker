@@ -76,8 +76,12 @@ export const mockLlmAdapter: MockLlmAdapter = (input) => {
   return `${input.roomLabel} is not available ${windowLabel} because ${REASON_MEANINGS[input.reasonCode as string]}.`;
 };
 
-function countSentences(text: string): number {
-  return text
+function countSentences(text: string, roomLabel: string): number {
+  // Punctuation inside the room label (e.g. "St. Andrews") is not sentence
+  // boundaries — strip the label before counting so the validator does not
+  // reject the adapter's own valid template output.
+  const withoutLabel = roomLabel ? text.split(roomLabel).join("") : text;
+  return withoutLabel
     .split(/[.!?]+/)
     .map((s) => s.trim())
     .filter(Boolean).length;
@@ -89,7 +93,9 @@ function isValidExplanationText(text: unknown, roomLabel: string): boolean {
   if (!trimmed || trimmed.includes("\n")) return false;
   if (trimmed.length > MAX_TEXT_LENGTH) return false;
   if (!trimmed.includes(roomLabel)) return false;
-  return countSentences(trimmed) >= 1 && countSentences(trimmed) <= 2;
+  return (
+    countSentences(trimmed, roomLabel) >= 1 && countSentences(trimmed, roomLabel) <= 2
+  );
 }
 
 /**

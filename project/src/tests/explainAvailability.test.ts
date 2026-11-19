@@ -108,6 +108,15 @@ check(
   injected !== null && injected.source === "mock-llm"
 );
 
+console.log("=== Regression F-3 (Task #07): labels with periods must not trigger fallback ===");
+const dottedLabel = "St. Andrews Hall Annex";
+const dotted = explainAvailability({ ...validAvailable, roomLabel: dottedLabel });
+check("F-3: dotted label is accepted as valid input", dotted !== null);
+check("F-3: dotted label text matches the deterministic template", dotted !== null && dotted.text === mockLlmAdapter({ ...validAvailable, roomLabel: dottedLabel }));
+check("F-3: dotted label keeps mock-llm source", dotted !== null && dotted.source === "mock-llm");
+const dottedUnavailable = explainAvailability({ ...validUnavailable, roomLabel: dottedLabel });
+check("F-3: dotted label unavailable verdict keeps mock-llm source", dottedUnavailable !== null && dottedUnavailable.source === "mock-llm" && dottedUnavailable.text.includes("is not available"));
+
 console.log("=== Task #05 scenario matrix: full chain on real fixture data ===");
 import { rooms } from "../data";
 import { checkAvailability } from "../lib/availability";
