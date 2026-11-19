@@ -108,4 +108,86 @@ check(
   injected !== null && injected.source === "mock-llm"
 );
 
+console.log("=== Task #05 scenario matrix: full chain on real fixture data ===");
+import { rooms } from "../data";
+import { checkAvailability } from "../lib/availability";
+
+const beforeChain = JSON.stringify(rooms);
+
+const eng101 = rooms.find((r) => r.id === "eng-101")!;
+const sci204 = rooms.find((r) => r.id === "sci-204")!;
+
+// S1: available room — 14:00-15:00 is free for eng-101 (bookings at 9:00-10:00, 13:00-14:30... use 16:00-17:00)
+const s1Verdict = checkAvailability(eng101, 960, 1020, 780);
+const s1 = explainAvailability({
+  roomLabel: eng101.name,
+  startTime: 960,
+  endTime: 1020,
+  isAvailable: s1Verdict.available,
+  reasonCode: s1Verdict.available ? null : s1Verdict.reasons[0].code,
+});
+check("S1: real available room yields explanation", s1 !== null && s1.source === "mock-llm" && s1.text.includes("is available"));
+
+// S2: overlapping booking — eng-101 has 780-870 (Robotics Lab); request 800-860 with now=780
+const s2Verdict = checkAvailability(eng101, 800, 860, 780);
+const s2 = explainAvailability({
+  roomLabel: eng101.name,
+  startTime: 800,
+  endTime: 860,
+  isAvailable: s2Verdict.available,
+  reasonCode: s2Verdict.available ? null : s2Verdict.reasons[0].code,
+});
+check("S2: real overlap yields OVERLAP wording", !s2Verdict.available && s2 !== null && s2.text.includes("overlaps an existing booking"));
+
+// S3: blocked room — sci-204 is blocked
+const s3Verdict = checkAvailability(sci204, 800, 860, 780);
+const s3 = explainAvailability({
+  roomLabel: sci204.name,
+  startTime: 800,
+  endTime: 860,
+  isAvailable: s3Verdict.available,
+  reasonCode: s3Verdict.available ? null : s3Verdict.reasons[0].code,
+});
+check("S3: real blocked room yields BLOCKED wording", !s3Verdict.available && s3 !== null && s3.text.includes("the room is currently blocked"));
+
+// S4: invalid time — start at 1440 is rejected by validation before any check
+check("S4: invalid time (start=1440) yields no explanation", explainAvailability({ ...validAvailable, startTime: 1440 }) === null);
+
+// S5: past time — start before current time carries PAST
+const s5Verdict = checkAvailability(eng101, 600, 660, 700);
+const s5 = explainAvailability({
+  roomLabel: eng101.name,
+  startTime: 600,
+  endTime: 660,
+  isAvailable: s5Verdict.available,
+  reasonCode: s5Verdict.available ? null : s5Verdict.reasons[0].code,
+});
+check("S5: past start yields PAST wording", !s5Verdict.available && s5 !== null && s5.text.includes("the start time is not in the future"));
+
+// S6: empty input — empty label is rejected
+check("S6: empty label yields no explanation", explainAvailability({ ...validAvailable, roomLabel: "" }) === null);
+
+// S7: overly long input — 81-char label is rejected
+check("S7: overlong label yields no explanation", explainAvailability({ ...validAvailable, roomLabel: "R".repeat(81) }) === null);
+
+// S8: simulated adapter timeout — a hanging/timing-out adapter surfaces as a
+// thrown error in this synchronous contract, exercising the fallback path
+const timingOutAdapter = () => {
+  throw new Error("simulated adapter timeout");
+};
+const s8 = explainAvailability(validAvailable, timingOutAdapter);
+check("S8: adapter timeout yields deterministic fallback", s8 !== null && s8.source === "fallback");
+check("S8: timeout fallback text matches the deterministic template", s8 !== null && s8.text === mockLlmAdapter(validAvailable));
+
+// S9: simulated adapter failure — same fallback path, distinct trigger
+const failingAdapter = () => {
+  throw new Error("simulated API failure");
+};
+const s9 = explainAvailability(validUnavailable, failingAdapter);
+check("S9: adapter failure yields fallback source", s9 !== null && s9.source === "fallback");
+check("S9: failure fallback still explains the verdict", s9 !== null && s9.text.includes("is not available") && s9.text.includes("Engineering Hall 101"));
+
+// Explanation chain never mutates room or booking data (feature AC5 + project AC5)
+check("S-all: fixture data unchanged after full check+explain chain", JSON.stringify(rooms) === beforeChain);
+
 console.log(`Results: ${passed} passed, 0 failed`);

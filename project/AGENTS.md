@@ -29,7 +29,7 @@ A single-page React + TypeScript app that checks whether one campus room at a ti
 | `src/components/RoomSchedule.tsx` | Selected room's bookings, capacity, and equipment tags |
 | `src/components/DecisionCard.tsx` | Renders Available/Unavailable verdict, reasons, and conflicting bookings |
 | `src/tests/availability.test.ts` | 35 checks: parser validation, AC1–AC6, regressions |
-| `src/tests/explainAvailability.test.ts` | 37 checks: valid/invalid inputs, verdict consistency, fallback, prompt-injection resistance (PW #11 Task #03) |
+| `src/tests/explainAvailability.test.ts` | 49 checks: valid/invalid inputs, verdict consistency, fallback, prompt-injection resistance (PW #11 Task #03), Task #05 scenario matrix on real fixture data (timeout/failure fallback, data immutability) |
 | `src/tests/filterRooms.test.ts` | 17 checks: capacity, equipment, combined filters, edge cases |
 | `tailwind.config.js` | Tailwind config with custom `xs` (400px) breakpoint |
 | `bug-detector/SKILL.md` | Bug-diagnosis procedure; diagnose and propose only, do not edit |
@@ -67,7 +67,7 @@ A single-page React + TypeScript app that checks whether one campus room at a ti
 ## Test commands (from package.json)
 
 ```bash
-npm test        # runs availability.test.ts, filterRooms.test.ts, then selection.test.ts, then explainAvailability.test.ts via tsx (93 checks: 35 + 17 + 4 + 37)
+npm test        # runs availability.test.ts, filterRooms.test.ts, then selection.test.ts, then explainAvailability.test.ts via tsx (97 checks: 35 + 17 + 4 + 49)
 npm run typecheck   # tsc --noEmit -p tsconfig.app.json
 npm run build       # vite build
 npm run lint        # eslint . (documented; run it when touching lint-relevant code)
